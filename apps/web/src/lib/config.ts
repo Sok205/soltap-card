@@ -1,7 +1,23 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import fs from 'node:fs';
 import path from 'node:path';
 import toml from '@iarna/toml';
+
+// Walk up from cwd to find the repo-root .env. SolidStart's vinxi dev runs with
+// cwd = apps/web, so the default `dotenv/config` import misses the repo-root .env.
+(function loadRepoRootEnv() {
+  let dir = process.cwd();
+  for (let i = 0; i < 6; i++) {
+    const candidate = path.join(dir, '.env');
+    if (fs.existsSync(candidate)) {
+      dotenv.config({ path: candidate, override: false });
+      return;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) return;
+    dir = parent;
+  }
+})();
 
 export type Config = {
   owner: {
