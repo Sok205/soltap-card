@@ -41,7 +41,15 @@ export async function POST(event: APIEvent) {
     return json({ error: 'rate limited: one handshake per recipient per 24h' }, 429);
   }
 
-  const { transaction, message } = await buildHandshakeTx(account);
+  // Pass the public-facing base URL so the on-chain metadata uri resolves to
+  // this server (or its ngrok tunnel). Falls back to PUBLIC_BASE_URL env or
+  // soltap.app default.
+  const url = new URL(event.request.url);
+  const proto = event.request.headers.get('x-forwarded-proto') ?? url.protocol.replace(':', '');
+  const host = event.request.headers.get('x-forwarded-host') ?? event.request.headers.get('host') ?? url.host;
+  const baseUrl = `${proto}://${host}`;
+
+  const { transaction, message } = await buildHandshakeTx(account, { baseUrl });
   return json({ transaction, message }, 200);
 }
 

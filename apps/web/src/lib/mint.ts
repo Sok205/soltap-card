@@ -16,7 +16,15 @@ export type BuiltHandshake = {
   message: string;
 };
 
-export async function buildHandshakeTx(recipient: string): Promise<BuiltHandshake> {
+export type BuildHandshakeOpts = {
+  /** Public base URL where /m/[edition].json is served. Defaults to PUBLIC_BASE_URL env. */
+  baseUrl?: string;
+};
+
+export async function buildHandshakeTx(
+  recipient: string,
+  opts: BuildHandshakeOpts = {},
+): Promise<BuiltHandshake> {
   const cfg = loadConfig();
   const { umi, feePayer, ownerAuthority } = umiWithFeePayer();
 
@@ -42,19 +50,11 @@ export async function buildHandshakeTx(recipient: string): Promise<BuiltHandshak
     bytesCreatedOnChain: 0,
   };
 
-  const metadataUri = `data:application/json,${encodeURIComponent(JSON.stringify({
-    name: `Handshake with ${cfg.owner.name} — #${edition}`,
-    description: cfg.owner.bio ?? '',
-    attributes: [
-      { trait_type: 'owner_name', value: cfg.owner.name },
-      { trait_type: 'owner_role', value: cfg.owner.role },
-      { trait_type: 'owner_x', value: cfg.owner.x ?? '' },
-      { trait_type: 'owner_github', value: cfg.owner.github ?? '' },
-      { trait_type: 'owner_email', value: cfg.owner.email ?? '' },
-      { trait_type: 'edition', value: String(edition) },
-      { trait_type: 'event', value: cfg.event.name },
-    ],
-  }))}`;
+  // The uri is stored as text on-chain. We must stay under Solana's 1232-byte
+  // legacy tx size limit. A short HTTPS URL is ~50 bytes; data: URIs blow past
+  // the limit fast. Metadata JSON is served by the /m/[edition].json route.
+  const baseUrl = opts.baseUrl ?? process.env.PUBLIC_BASE_URL ?? 'https://soltap.app';
+  const metadataUri = `${baseUrl}/m/${edition}`;
 
   const createBuilder = create(umi, {
     asset,
