@@ -1,0 +1,24 @@
+[owner]
+name = "Sok"
+role = "Rust + Solana developer"
+bio = "Building indexers and on-chain UX. Open to roles."
+x = ""
+github = "Sok205"
+email = "sokfil205@gmail.com"
+wallet = "Dt9JdZUojPD58JdcZqvtUsfXURBjT9LdPZAsJpG1ZasY"
+
+[chain]
+cluster = "devnet"
+rpc_url = "https://devnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}"
+helius_laserstream_url = ""
+
+[collection]
+collection_address = "5btULRffJ1DAN8UREWUyxMvU3taFARZYo6d4u1TzrVeH"
+owner_card_asset = "3gHR35TpLP22xPtANZAoW1bDJZhMfpyWkgynQcZJPBJc"
+
+[art]
+template = "art/card-template.svg"
+storage = "data-uri"
+
+[event]
+name = "Solana Accelerate 2026"
