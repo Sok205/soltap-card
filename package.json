@@ -9,6 +9,11 @@
     "init-collection": "pnpm tsx scripts/init-collection.ts",
     "check-config": "pnpm tsx scripts/check-config.ts"
   },
+  "pnpm": {
+    "overrides": {
+      "vite-plugin-solid>vite": "^6.4.1"
+    }
+  },
   "devDependencies": {
     "@iarna/toml": "^2.2.5",
     "@metaplex-foundation/mpl-core": "^1.1.0",
