@@ -8,3 +8,4 @@ target/
 *.db-journal
 .research/
 .DS_Store
+.fastembed_cache/
