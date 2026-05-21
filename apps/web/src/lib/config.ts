@@ -33,6 +33,15 @@ export type Config = {
     cluster: 'devnet' | 'mainnet-beta';
     rpc_url: string;
     helius_laserstream_url?: string;
+    /**
+     * When true, the backend's fee-payer wallet pays for every mint and the
+     * recipient sees a $0.00 tx. When false (default), the recipient signs as
+     * the fee payer and pays ~5000 lamports (~$0.0001).
+     *
+     * Sponsorship is broken on Phantom/Solflare mobile via Solana Pay
+     * (they validate that the user is the payer); keep false for compatibility.
+     */
+    sponsor_fees?: boolean;
   };
   collection: {
     collection_address: string;

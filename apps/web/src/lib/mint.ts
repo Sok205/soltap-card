@@ -9,10 +9,8 @@ import { loadConfig } from './config';
 import { umiWithFeePayer } from './solana';
 import { getCurrentEdition } from './counter';
 
-// SPL Memo v2 program. Used here as the signer-forcing instruction in the
-// Solana Pay flow — Phantom (and other wallets) require the recipient's
-// pubkey to appear as a signer in the partially-signed tx, and the Memo
-// program is the canonical zero-side-effect way to demand a signature.
+// SPL Memo v2 program. Used only when chain.sponsor_fees=true to force the
+// recipient's signature (since they aren't the fee payer in that mode).
 const MEMO_PROGRAM_ID = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
 
 export type BuiltHandshake = {
@@ -37,49 +35,55 @@ export async function buildHandshakeTx(
   const asset = generateSigner(umi);
 
   const recipientNoopSigner = createNoopSigner(publicKey(recipient));
+  const sponsorFees = cfg.chain.sponsor_fees ?? false;
 
-  // Memo ix with the recipient as a signer. Forces the wallet to sign the tx
-  // (Solana Pay flow requires the user's pubkey to appear as a signer).
-  // Memo data is just utf-8 bytes — no parsing/validation by the program.
-  const memoData = new TextEncoder().encode(`SolTap handshake #${edition}`);
-  const memoIx = {
-    instruction: {
-      programId: publicKey(MEMO_PROGRAM_ID),
-      keys: [
-        { pubkey: publicKey(recipient), isSigner: true, isWritable: false },
-      ],
-      data: memoData,
-    },
-    signers: [recipientNoopSigner],
-    bytesCreatedOnChain: 0,
-  };
-
-  // The uri is stored as text on-chain. We must stay under Solana's 1232-byte
-  // legacy tx size limit. A short HTTPS URL is ~50 bytes; data: URIs blow past
-  // the limit fast. Metadata JSON is served by the /m/[edition].json route.
+  // The uri is stored as text on-chain. Stay under Solana's 1232-byte legacy
+  // tx size limit. Metadata JSON is served by the /m/[edition] route.
   const baseUrl = opts.baseUrl ?? process.env.PUBLIC_BASE_URL ?? 'https://soltap.app';
   const metadataUri = `${baseUrl}/m/${edition}`;
+
+  // Fee-payer model:
+  // - sponsor_fees=false (default): recipient signs as the fee payer and pays
+  //   ~5000 lamports (~$0.0001). Universal wallet support, drain-attack proof.
+  // - sponsor_fees=true: backend pays. Needs the Memo ix to force the recipient's
+  //   signature since they aren't the payer. Spotty Phantom/Solflare mobile
+  //   support — use at your own risk.
+  const txPayer = sponsorFees ? feePayer : recipientNoopSigner;
 
   const createBuilder = create(umi, {
     asset,
     collection,
     authority: ownerAuthority,
-    payer: feePayer,
+    payer: txPayer,
     name: `Handshake with ${cfg.owner.name} — #${edition}`,
     uri: metadataUri,
     owner: publicKey(recipient),
   });
 
-  const builder = transactionBuilder()
-    .add(memoIx)
+  let builder = transactionBuilder();
+  if (sponsorFees) {
+    // Memo ix with recipient as signer — needed only when they aren't the payer.
+    const memoData = new TextEncoder().encode(`SolTap handshake #${edition}`);
+    builder = builder.add({
+      instruction: {
+        programId: publicKey(MEMO_PROGRAM_ID),
+        keys: [{ pubkey: publicKey(recipient), isSigner: true, isWritable: false }],
+        data: memoData,
+      },
+      signers: [recipientNoopSigner],
+      bytesCreatedOnChain: 0,
+    });
+  }
+  builder = builder
     .add(createBuilder)
-    // Force legacy tx format. Some Phantom mobile versions reject v0 Solana Pay
-    // txs with "Invalid data from the payment provider". Legacy is universal.
-    .setVersion('legacy');
+    // Force legacy tx format for max wallet compatibility.
+    .setVersion('legacy')
+    // Explicit fee payer override (recipient in default mode).
+    .setFeePayer(txPayer);
 
-  // buildAndSign fetches latest blockhash, builds the tx, and signs with all
-  // known signers (feePayer identity + asset keypair + ownerAuthority from instructions).
-  // recipientNoopSigner is a no-op signer — its slot stays empty for the wallet to fill.
+  // buildAndSign fetches latest blockhash and signs with all known keypair
+  // signers (asset + ownerAuthority + feePayer keypair if sponsoring).
+  // Noop signers (recipient) leave their slot empty for the wallet to fill.
   const built = await builder.buildAndSign(umi);
   const serialized = umi.transactions.serialize(built);
   const b64 = Buffer.from(serialized).toString('base64');
