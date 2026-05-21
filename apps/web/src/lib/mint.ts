@@ -9,7 +9,11 @@ import { loadConfig } from './config';
 import { umiWithFeePayer } from './solana';
 import { getCurrentEdition } from './counter';
 
-const SYSTEM_PROGRAM_ID = '11111111111111111111111111111111';
+// SPL Memo v2 program. Used here as the signer-forcing instruction in the
+// Solana Pay flow — Phantom (and other wallets) require the recipient's
+// pubkey to appear as a signer in the partially-signed tx, and the Memo
+// program is the canonical zero-side-effect way to demand a signature.
+const MEMO_PROGRAM_ID = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
 
 export type BuiltHandshake = {
   transaction: string; // base64
@@ -34,17 +38,17 @@ export async function buildHandshakeTx(
 
   const recipientNoopSigner = createNoopSigner(publicKey(recipient));
 
-  // No-op transfer of 0 lamports from recipient → recipient. Forces the wallet
-  // to sign the tx (Solana Pay flow requirement).
-  // System Program "Transfer" ix: discriminator 2 (4 bytes LE) + amount u64 LE = 0
-  const noopTransferIx = {
+  // Memo ix with the recipient as a signer. Forces the wallet to sign the tx
+  // (Solana Pay flow requires the user's pubkey to appear as a signer).
+  // Memo data is just utf-8 bytes — no parsing/validation by the program.
+  const memoData = new TextEncoder().encode(`SolTap handshake #${edition}`);
+  const memoIx = {
     instruction: {
-      programId: publicKey(SYSTEM_PROGRAM_ID),
+      programId: publicKey(MEMO_PROGRAM_ID),
       keys: [
-        { pubkey: publicKey(recipient), isSigner: true, isWritable: true },
-        { pubkey: publicKey(recipient), isSigner: false, isWritable: true },
+        { pubkey: publicKey(recipient), isSigner: true, isWritable: false },
       ],
-      data: new Uint8Array([2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+      data: memoData,
     },
     signers: [recipientNoopSigner],
     bytesCreatedOnChain: 0,
@@ -67,8 +71,11 @@ export async function buildHandshakeTx(
   });
 
   const builder = transactionBuilder()
-    .add(noopTransferIx)
-    .add(createBuilder);
+    .add(memoIx)
+    .add(createBuilder)
+    // Force legacy tx format. Some Phantom mobile versions reject v0 Solana Pay
+    // txs with "Invalid data from the payment provider". Legacy is universal.
+    .setVersion('legacy');
 
   // buildAndSign fetches latest blockhash, builds the tx, and signs with all
   // known signers (feePayer identity + asset keypair + ownerAuthority from instructions).
