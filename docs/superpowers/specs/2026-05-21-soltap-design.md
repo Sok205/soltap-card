@@ -238,3 +238,43 @@ None blocking. Decisions deferred:
 ---
 
 **Approved by:** Sok (2026-05-21)
+
+---
+
+## Amendments (2026-05-21, after Phase 1)
+
+### A1. Web stack changed from Next.js to SolidStart
+
+Original §6 listed `apps/web` as Next.js 15 App Router. Replaced with **SolidStart v1** (Vinxi bundler, file-based routing in `src/routes/`).
+
+- **Why:** Solid's fine-grained reactivity is a better fit for the live SSE-driven counter — the demo's headline moment. Also pairs thematically with the Rust indexer ("pick the right tool, not the popular one"), strengthening hiring narrative.
+- **Implications:**
+  - Route file convention: `apps/web/src/routes/tap/[owner].ts` (exports GET/POST) replaces `apps/web/app/tap/[owner]/route.ts`.
+  - Profile page: `apps/web/src/routes/[owner].tsx` replaces `apps/web/app/[owner]/page.tsx`.
+  - Components are `.tsx` Solid components, not React.
+  - Deployment §9 deployment target stays compatible — SolidStart deploys to Vercel via its Vercel preset, or to a Node host like Fly.io.
+- Risk: smaller wallet-adapter ecosystem for Solid. Plan to use raw `@solana/web3.js` + Umi calls and avoid wallet-adapter libraries where they require React context.
+
+### A2. Prior-art on Solana — repositioning required
+
+Competitive research (via Colosseum Copilot, 2026-05-21) surfaced direct prior art that the original spec missed:
+
+- **POW Cards** (Radar Sep 2024, Honorable Mention – Payments) — NFC cards on Solana with Apple/Google Wallet pass integration. Strongest competitor. github.com/tomrowbo/POW-Cards.
+- **My Nexus Card** (Radar Sep 2024) — same one-line pitch as SolTap; solo dev, no shipped demo. github.com/nizarsyahmi37/MyNexusCard.
+- **Solana Tap** (Breakout Apr 2025) — NFC tap-to-pay (payments, not networking).
+- **here.** (Cypherpunk Sep 2025, prize winner) — GPS-verified photo NFTs. Adjacent "proof-of-being-there" mechanic.
+- **Attest Protocol** (Radar Sep 2024, prize winner) — generalized on-chain attestation infra. SolTap handshakes could plausibly be implemented as attestations on this rather than custom Metaplex Core assets. Stretch goal.
+
+**No NFC business card project is in any Solana accelerator portfolio.** The wedge has been tried multiple times since 2024 but produced no venture-scale outcomes.
+
+**Repositioning consequences:**
+
+1. **Primary goal stays:** SolTap remains a hiring demo. The product is not novel; the *narrative* and the technical depth (Rust indexer) are.
+2. **Demote secondary goal:** "Open-source kit becomes adopted by other attendees" is now an *outcome to hope for*, not an optimization target. No prior similar kit has gained traction; assume the same.
+3. **Promote the Rust indexer:** in pitch, demo, and README, lead with **"on-chain handshake protocol with a live Rust indexer"** — the NFC card is the *demo surface*, not the product. The indexer is the most legible differentiator for Helius/Triton/Jito-style roles.
+4. **README must cite prior art.** Acknowledging POW Cards + My Nexus Card upfront signals due diligence and demarcates positioning ("wallet-native instead of wallet-pass-locked"). Recruiters will Google.
+5. **Risks section (§11) addendum:** if POW Cards' creator (tomrowbo) appears at Accelerate with a v2, expect direct comparison. Defense: different UX angle (Phantom + Metaplex Core vs. Apple Wallet pass) + the live indexer + an open repo with thoughtful README. Don't compete on UX polish (they win); compete on technical legibility.
+
+### A3. config.toml secret-handling resolved
+
+§8 said config.toml is committed and secrets live in env. Implementation surfaced an edge case: the `chain.rpc_url` needs a Helius API key. Resolution: `config.toml` uses literal `${HELIUS_API_KEY}` placeholder, and the config loader does env-var substitution at runtime. `config.toml` stays committed; `.env` carries the secret. Applied in Task 1.3.
