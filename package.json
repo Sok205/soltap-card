@@ -1,0 +1,16 @@
+{
+  "name": "soltap",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build && pnpm --filter card-sdk build",
+    "test": "pnpm --filter '*' test && cargo test",
+    "init-collection": "pnpm tsx scripts/init-collection.ts",
+    "check-config": "pnpm tsx scripts/check-config.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0"
+  }
+}

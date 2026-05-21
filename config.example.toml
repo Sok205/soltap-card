@@ -1,0 +1,25 @@
+[owner]
+name = "Sok"
+role = "Rust + Solana developer"
+bio = "Building indexers and on-chain UX. Open to roles."
+x = "@sokdev"
+github = "sok205"
+email = "sokfil205@gmail.com"
+wallet = "<owner pubkey>"
+
+[chain]
+cluster = "devnet"  # or "mainnet-beta"
+rpc_url = "https://api.devnet.solana.com"
+helius_laserstream_url = "..."
+
+[collection]
+# Populated by `scripts/init-collection.ts` on first deploy
+collection_address = ""
+owner_card_asset = ""
+
+[art]
+template = "art/card-template.svg"
+storage = "arweave"  # or "data-uri"
+
+[event]
+name = "Solana Accelerate 2026"
