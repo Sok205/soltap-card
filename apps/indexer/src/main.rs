@@ -3,12 +3,13 @@ use axum::{routing::get, Router};
 use soltap_indexer::{
     config,
     events::HandshakeEvent,
+    http::{self, AppState},
     store::Store,
     subscriber::{PollingSubscriber, Subscriber},
 };
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
 use tokio::sync::broadcast;
-use tower_http::trace::TraceLayer;
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
@@ -21,16 +22,16 @@ async fn main() -> Result<()> {
     tracing::info!(
         cluster = %cfg.chain.cluster,
         collection = %cfg.collection.collection_address,
-        owner_card = %cfg.collection.owner_card_asset,
         "loaded config"
     );
 
     let db_url =
         std::env::var("INDEXER_DB_URL").unwrap_or_else(|_| "sqlite:./soltap.db".into());
     let store = Store::open(&db_url).await?;
-    tracing::info!(db = %db_url, count = store.count().await?, "store opened");
+    let initial = store.count().await?;
+    tracing::info!(db = %db_url, count = initial, "store opened");
 
-    let (tx, _rx) = broadcast::channel::<HandshakeEvent>(64);
+    let (tx, _) = broadcast::channel::<HandshakeEvent>(64);
 
     {
         let sub = PollingSubscriber::new(
@@ -46,8 +47,15 @@ async fn main() -> Result<()> {
         });
     }
 
+    let state = AppState {
+        store: Arc::new(store),
+        tx,
+    };
+
     let app = Router::new()
         .route("/healthz", get(|| async { "ok" }))
+        .merge(http::router(state))
+        .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http());
 
     let port: u16 = std::env::var("INDEXER_PORT")
