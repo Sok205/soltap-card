@@ -1,0 +1,69 @@
+{
+  "blockTime": 1779361257,
+  "meta": {
+    "computeUnitsConsumed": 13322,
+    "costUnits": 16615,
+    "err": null,
+    "fee": 15000,
+    "innerInstructions": [
+      {
+        "index": 0,
+        "instructions": [
+          {
+            "accounts": [
+              0,
+              1
+            ],
+            "data": "111112qd2JK4sFvu9Ae9ctXMfHU663CkAH5Z6QqH9vEoTjG1hq6LmZeyXfNafjakY5dSQF",
+            "programIdIndex": 6,
+            "stackHeight": 2
+          }
+        ]
+      }
+    ],
+    "loadedAddresses": {
+      "readonly": [],
+      "writable": []
+    },
+    "logMessages": [
+      "Program CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d invoke [1]",
+      "Program log: Instruction: CreateV2",
+      "Program 11111111111111111111111111111111 invoke [2]",
+      "Program 11111111111111111111111111111111 success",
+      "Program log: programs/mpl-core/src/state/collection.rs:139:Approve",
+      "Program CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d consumed 13322 of 200000 compute units",
+      "Program CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d success"
+    ],
+    "postBalances": [
+      2496717160,
+      3267840,
+      2494401440,
+      1767840,
+      10001141440,
+      0,
+      1
+    ],
+    "postTokenBalances": [],
+    "preBalances": [
+      2500000000,
+      0,
+      2494401440,
+      1767840,
+      10001141440,
+      0,
+      1
+    ],
+    "preTokenBalances": [],
+    "rewards": [],
+    "status": {
+      "Ok": null
+    }
+  },
+  "slot": 463888262,
+  "transaction": [
+    "A8HpGKLOGGyJNcvhFuG+HAGxbsKKaAuxb4H7R9KYaoJRYI90WLECMLPosfYtV30ytGgpp9nkQoWvg+Hw2FGAlAkOioIS7FKu7+YqqMZp0tZp2uOhLGTskMsjAsxXtPibK6Q0aTN12bdgbr0T+UGUD9EXYuevX1PWMjAUn94HxIIOF5rojDa9rXoHBT8K2n7RsXXTUo65hQHRluAuBrFfeCDa/zw3Wb4pKr1gfZwZlxwTFpN3LlvznvXBL+SIFFXGCoADAQMHY+3OFsA35Kt3Rt+eFjvhPktBFMdK9ObcCABozHwRhipNnA8MbxkxwEXZMexMjsqJgVdccULPkSitkPai6sFVB79mQPMbZNkXqiyKK2KuNtg02W53icMYEzL7Dl88aUq3RF6xqUPXje7ZhR+K5Lw0C4xEh4moIL+/nmynCg/j1dqvVKsQvZelQqCe97OYid0M05SkzOnfps3Jfr4tI1unSO750VS7tJq8Y5imy7ARNhZRoxU02S//UFwSWexGrOrXAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABrBlSLPivTYO0GIGa/VrQWMY6OkKWJcLzDHBDbc2Y/3AEECAEDAgAFBAYERxQAGQAAAEhhbmRzaGFrZSB3aXRoIFNvayDigJQgIzEaAAAAaHR0cHM6Ly9leGFtcGxlLmNvbS9oLmpzb24BAAAAAAEAAAAAAA==",
+    "base64"
+  ],
+  "transactionIndex": 2,
+  "version": 0
+}
