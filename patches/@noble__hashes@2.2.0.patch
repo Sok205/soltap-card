@@ -1,0 +1,14 @@
+diff --git a/package.json b/package.json
+index 0ace74d459b29361953b1bf567befa6bcdb829e1..12e286320119420c52a0f8af57b38cc3a2d15237 100644
+--- a/package.json
++++ b/package.json
+@@ -55,7 +55,8 @@
+     "./sha3-addons.js": "./sha3-addons.js",
+     "./sha3.js": "./sha3.js",
+     "./webcrypto.js": "./webcrypto.js",
+-    "./utils.js": "./utils.js"
++    "./utils.js": "./utils.js",
++    "./sha3": "./sha3.js"
+   },
+   "engines": {
+     "node": ">= 20.19.0"
