@@ -38,8 +38,12 @@ class UpstashKVStore implements RateLimitStore {
       headers: { Authorization: `Bearer ${this.token}` },
     });
     if (!res.ok) {
-      console.warn('rateLimit: KV unavailable, failing open', res.status);
-      return true; // fail-open; prod operators should monitor KV health
+      if (process.env.NODE_ENV === 'production') {
+        console.error('rateLimit: KV unavailable in production; failing CLOSED', res.status);
+        return false;
+      }
+      console.warn('rateLimit: KV unavailable in dev; failing open', res.status);
+      return true;
     }
     const body = await res.json() as { result: string | null };
     return body.result === 'OK'; // OK = newly set (allowed); null = already existed (rate-limited)

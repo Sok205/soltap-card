@@ -1,9 +1,17 @@
-// Counter will be backed by the indexer in Phase 3. For now, return 0
-// so mint can proceed with edition #1 (current + 1).
-export async function getCurrentEdition(): Promise<number> {
-  return 0;
-}
+import { fetchStats } from './indexer';
 
-export async function incrementCounter(): Promise<void> {
-  // No-op in Phase 2. Replaced by indexer-driven reconciliation in Phase 4.
+/**
+ * Returns the current mint count from the indexer, used to determine the
+ * next edition number. Falls back to 0 if the indexer is unreachable so
+ * the mint flow can continue (edition #1 will be used).
+ *
+ * Runs server-side only (INDEXER_URL is a server-side env var).
+ */
+export async function getCurrentEdition(): Promise<number> {
+  try {
+    const { count } = await fetchStats();
+    return count;
+  } catch {
+    return 0;
+  }
 }

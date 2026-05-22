@@ -12,12 +12,26 @@ export type Stats = {
   latest_slot: number | null;
 };
 
-function indexerBaseUrl(): string {
+// URL helpers — split by runtime context:
+//
+// - fetchStats / fetchHistory run server-side (SSR / API routes). They use
+//   process.env.INDEXER_URL which is available in Node and never sent to the
+//   browser bundle.
+//
+// - indexerSseUrl() is called client-side for EventSource. process.env is not
+//   available in the browser, so it uses import.meta.env.VITE_INDEXER_URL
+//   (a Vite build-time constant). Falls back to localhost for local dev.
+
+function serverIndexerUrl(): string {
   return process.env.INDEXER_URL ?? 'http://localhost:8787';
 }
 
+function clientIndexerUrl(): string {
+  return import.meta.env.VITE_INDEXER_URL || 'http://localhost:8787';
+}
+
 export async function fetchStats(): Promise<Stats> {
-  const url = `${indexerBaseUrl()}/stats`;
+  const url = `${serverIndexerUrl()}/stats`;
   try {
     const r = await fetch(url, { cache: 'no-store' });
     if (!r.ok) throw new Error(`indexer /stats ${r.status}`);
@@ -29,7 +43,7 @@ export async function fetchStats(): Promise<Stats> {
 }
 
 export async function fetchHistory(limit = 20): Promise<HandshakeEvent[]> {
-  const url = `${indexerBaseUrl()}/events/history?limit=${Math.min(limit, 200)}`;
+  const url = `${serverIndexerUrl()}/events/history?limit=${Math.min(limit, 200)}`;
   try {
     const r = await fetch(url, { cache: 'no-store' });
     if (!r.ok) throw new Error(`indexer /events/history ${r.status}`);
@@ -40,7 +54,7 @@ export async function fetchHistory(limit = 20): Promise<HandshakeEvent[]> {
   }
 }
 
-/** Client-only helper: URL for EventSource. */
+/** Client-only helper: URL for EventSource (browser-side SSE connection). */
 export function indexerSseUrl(): string {
-  return `${indexerBaseUrl()}/events`;
+  return `${clientIndexerUrl()}/events`;
 }
