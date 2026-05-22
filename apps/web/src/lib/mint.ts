@@ -86,6 +86,16 @@ export async function buildHandshakeTx(
   // Noop signers (recipient) leave their slot empty for the wallet to fill.
   const built = await builder.buildAndSign(umi);
   const serialized = umi.transactions.serialize(built);
+
+  // P0.5: Guard against silent wallet rejection due to oversized transactions.
+  // Solana legacy transactions are hard-capped at 1232 bytes.
+  if (serialized.length > 1232) {
+    throw new Error(
+      `Built tx is ${serialized.length} bytes, over Solana legacy 1232-byte limit. ` +
+      `Shorten owner.name/role/event or remove instructions.`,
+    );
+  }
+
   const b64 = Buffer.from(serialized).toString('base64');
 
   return {

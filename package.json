@@ -11,7 +11,15 @@
   },
   "pnpm": {
     "overrides": {
-      "vite-plugin-solid>vite": "^6.4.1"
+      "vite-plugin-solid>vite": "^6.4.1",
+      "h3": "^1.15.6",
+      "vite": ">=6.4.2",
+      "uuid": "^11.1.1"
+    },
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "@metaplex-foundation/mpl-core>@noble/hashes": "~1.8.0"
+      }
     }
   },
   "devDependencies": {

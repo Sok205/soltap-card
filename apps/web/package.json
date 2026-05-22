@@ -13,20 +13,21 @@
   },
   "dependencies": {
     "@iarna/toml": "^3.0.0",
-    "@metaplex-foundation/mpl-core": "^1.1.0",
+    "@metaplex-foundation/mpl-core": "1.1.2",
     "@metaplex-foundation/umi": "^0.9.0",
     "@metaplex-foundation/umi-bundle-defaults": "^0.9.0",
+    "@solana/web3.js": "^1.95.0",
     "@solidjs/router": "^0.14.0",
     "@solidjs/start": "^1.0.0",
     "@soltap/card-sdk": "workspace:*",
     "bs58": "^6.0.0",
     "dotenv": "^16.4.5",
     "solid-js": "^1.9.0",
-    "vinxi": "^0.5.7"
+    "vinxi": "^0.5.11"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.5.0",
-    "vitest": "^4.0.0"
+    "vitest": "^4.1.7"
   }
 }
