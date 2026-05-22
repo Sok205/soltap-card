@@ -82,7 +82,7 @@ SolTap is an open-source kit for NFC-tappable business cards on Solana. The owne
 
 ```sh
 # 1. Clone + install
-git clone https://github.com/sok205/sol-promotion-card.git soltap
+git clone https://github.com/Sok205/soltap-card.git soltap
 cd soltap
 pnpm install
 cargo build -p soltap-indexer

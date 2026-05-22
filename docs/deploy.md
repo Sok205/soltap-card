@@ -19,7 +19,7 @@ Target time: ~30 minutes to a working local dev loop. Production deploy (Vercel 
 ## 2. Clone and install
 
 ```sh
-git clone https://github.com/sok205/sol-promotion-card.git soltap
+git clone https://github.com/Sok205/soltap-card.git soltap
 cd soltap
 pnpm install
 cargo build -p soltap-indexer

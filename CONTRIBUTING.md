@@ -4,7 +4,7 @@ SolTap is currently maintainer-focused — built for Solana Accelerate 2026, wit
 
 ## Filing an issue
 
-Use [GitHub Issues](https://github.com/sok205/sol-promotion-card/issues). Include: what you did, what you expected, what happened instead. A minimal reproduction is ideal.
+Use [GitHub Issues](https://github.com/Sok205/soltap-card/issues). Include: what you did, what you expected, what happened instead. A minimal reproduction is ideal.
 
 ## Branch and PR workflow
 
