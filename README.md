@@ -109,17 +109,6 @@ NFC business cards on Solana are not a new idea. Projects that came before:
 - **[My Nexus Card](https://github.com/nizarsyahmi37/MyNexusCard)** (Radar Sep 2024) — same one-line pitch; solo dev, no shipped demo at time of writing.
 - **[Solana Tap](https://github.com/vonernue/solana-tap)** (Breakout Apr 2025) — NFC tap-to-pay (payments focus, not networking / contact exchange).
 
-What's specifically different here: none of the above have a real-time on-chain event pipeline. The Rust indexer — custom wire-format decoder, SQLite persistence, SSE fan-out, drop-in Yellowstone gRPC interface — is the technical differentiator and the main portfolio piece. SolTap is not trying to be the first or the most polished; it's trying to be the most legible open-source Rust-infra piece in this space.
-
-## Status and roadmap
-
-- **Working today (devnet):** Solana Pay tx-request endpoint, fee-sponsored Metaplex Core mint, Rust indexer (polling + SQLite + SSE), live profile page, `init-collection` bootstrap script.
-- **In progress:** art template (SVG → PNG renderer), metadata upload to Arweave.
-- **Phase 4 (pre-Accelerate):** mainnet cutover, Vercel + Fly.io deploy, NFC card programming, demo rehearsal.
-- **Stretch:** Yellowstone gRPC subscription (swap for polling), mutual mint, endorsement attestations, cross-fork leaderboard.
-
-Built for Solana Accelerate 2026. Mainnet target: one week before the event.
-
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
