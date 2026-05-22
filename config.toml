@@ -11,6 +11,7 @@ wallet = "Dt9JdZUojPD58JdcZqvtUsfXURBjT9LdPZAsJpG1ZasY"
 cluster = "devnet"
 rpc_url = "https://devnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}"
 helius_laserstream_url = ""
+sponsor_fees = true
 
 [collection]
 collection_address = "5btULRffJ1DAN8UREWUyxMvU3taFARZYo6d4u1TzrVeH"
