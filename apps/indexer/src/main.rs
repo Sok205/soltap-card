@@ -1,10 +1,9 @@
 use anyhow::Result;
 use axum::{routing::get, Router};
+use soltap_indexer::config;
 use std::net::SocketAddr;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
-
-mod config;
 
 #[tokio::main]
 async fn main() -> Result<()> {
