@@ -41,8 +41,25 @@ async fn main() -> Result<()> {
         let store_for_sub = store.clone();
         let tx_for_sub = tx.clone();
         tokio::spawn(async move {
-            if let Err(e) = sub.run(store_for_sub, tx_for_sub).await {
-                tracing::error!(error = ?e, "subscriber crashed");
+            let mut backoff = std::time::Duration::from_secs(1);
+            loop {
+                let sub = sub.clone();
+                let store = store_for_sub.clone();
+                let tx = tx_for_sub.clone();
+                let handle = tokio::spawn(async move { sub.run(store, tx).await });
+                match handle.await {
+                    Ok(Ok(())) => {
+                        tracing::warn!("subscriber exited cleanly; restarting in {:?}", backoff);
+                    }
+                    Ok(Err(e)) => {
+                        tracing::error!(error = ?e, "subscriber returned error; restarting in {:?}", backoff);
+                    }
+                    Err(join_err) => {
+                        tracing::error!(panic = ?join_err, "subscriber TASK PANICKED; restarting in {:?}", backoff);
+                    }
+                }
+                tokio::time::sleep(backoff).await;
+                backoff = (backoff * 2).min(std::time::Duration::from_secs(60));
             }
         });
     }

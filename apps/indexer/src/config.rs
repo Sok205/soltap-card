@@ -107,8 +107,3 @@ pub fn load() -> Result<Config> {
     Ok(cfg)
 }
 
-/// Resolves the config.toml path without parsing it (useful for diagnostics).
-#[allow(dead_code)]
-pub fn config_path() -> Option<PathBuf> {
-    find_upward("config.toml", 6)
-}

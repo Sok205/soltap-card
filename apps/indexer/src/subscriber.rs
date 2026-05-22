@@ -1,4 +1,4 @@
-use crate::{decoder::try_decode_handshake, events::HandshakeEvent, store::Store};
+use crate::{decoder::{try_decode_handshake, LoadedAddresses}, events::HandshakeEvent, store::Store};
 use anyhow::{Context, Result};
 use std::time::Duration;
 use tokio::sync::broadcast;
@@ -15,6 +15,7 @@ pub trait Subscriber {
     ) -> impl std::future::Future<Output = Result<()>> + Send;
 }
 
+#[derive(Clone)]
 pub struct PollingSubscriber {
     pub rpc_url: String,
     pub collection: String,
@@ -183,7 +184,25 @@ async fn fetch_and_decode(
         .or(sig_info.block_time)
         .unwrap_or_else(|| chrono::Utc::now().timestamp());
 
-    try_decode_handshake(tx_arr, &sig_info.signature, slot, expected_collection, ts)
+    // Extract ALT-loaded addresses from result.meta.loadedAddresses (v0 transactions).
+    let loaded_addresses = result
+        .get("meta")
+        .and_then(|m| m.get("loadedAddresses"))
+        .map(|la| {
+            let writable = la
+                .get("writable")
+                .and_then(|v| v.as_array())
+                .map(|arr| arr.iter().filter_map(|v| v.as_str().map(str::to_owned)).collect())
+                .unwrap_or_default();
+            let readonly = la
+                .get("readonly")
+                .and_then(|v| v.as_array())
+                .map(|arr| arr.iter().filter_map(|v| v.as_str().map(str::to_owned)).collect())
+                .unwrap_or_default();
+            LoadedAddresses { writable, readonly }
+        });
+
+    try_decode_handshake(tx_arr, &sig_info.signature, slot, expected_collection, ts, loaded_addresses.as_ref())
 }
 
 #[cfg(test)]

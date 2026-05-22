@@ -15,7 +15,7 @@ fn fixture() -> serde_json::Value {
 #[test]
 fn decode_fixture_matches_expected_fields() {
     let tx = fixture();
-    let event = try_decode_handshake(&tx, SIGNATURE, SLOT, COLLECTION, TS)
+    let event = try_decode_handshake(&tx, SIGNATURE, SLOT, COLLECTION, TS, None)
         .expect("decode succeeds")
         .expect("event is Some");
 
@@ -42,6 +42,7 @@ fn wrong_collection_returns_none() {
         SLOT,
         "WRONG_COLLECTION_111111111111111111111111111",
         TS,
+        None,
     )
     .expect("decode succeeds");
 

@@ -39,12 +39,22 @@ fn read_compact_u16(buf: &[u8]) -> Result<(usize, usize)> {
     Ok((val, consumed))
 }
 
+/// Address Lookup Table (ALT) addresses, as returned by `getTransaction`
+/// `result.meta.loadedAddresses`. Solana's resolution order is:
+///   static accounts → writable ALT accounts → readonly ALT accounts.
+pub struct LoadedAddresses {
+    pub writable: Vec<String>,
+    pub readonly: Vec<String>,
+}
+
 /// Decode a base64-encoded Solana versioned transaction (the first element of
 /// the `["<b64>","base64"]` pair returned by `getTransaction`).
 ///
 /// Supports legacy messages and v0 messages. Returns a list of decoded
 /// instructions with accounts already resolved to base58 pubkeys.
-fn decode_instructions(tx_b64: &str) -> Result<Vec<RawIx>> {
+/// Pass `loaded_addresses` for v0 transactions that reference Address Lookup
+/// Tables; `None` is fine when the transaction uses only static accounts.
+fn decode_instructions(tx_b64: &str, loaded_addresses: Option<&LoadedAddresses>) -> Result<Vec<RawIx>> {
     use base64::prelude::*;
     let tx_bytes = BASE64_STANDARD.decode(tx_b64)?;
     let buf = tx_bytes.as_slice();
@@ -116,10 +126,7 @@ fn decode_instructions(tx_b64: &str) -> Result<Vec<RawIx>> {
             }
             let acct_idx = buf[off] as usize;
             off += 1;
-            let key = static_accounts
-                .get(acct_idx)
-                .cloned()
-                .unwrap_or_else(|| format!("LOADED[{}]", acct_idx));
+            let key = resolve_account(acct_idx, &static_accounts, loaded_addresses);
             accounts.push(key);
         }
 
@@ -131,10 +138,7 @@ fn decode_instructions(tx_b64: &str) -> Result<Vec<RawIx>> {
         let data = buf[off..off + data_len].to_vec();
         off += data_len;
 
-        let program_id = static_accounts
-            .get(prog_idx)
-            .cloned()
-            .unwrap_or_else(|| format!("LOADED[{}]", prog_idx));
+        let program_id = resolve_account(prog_idx, &static_accounts, loaded_addresses);
 
         instructions.push(RawIx {
             program_id,
@@ -146,12 +150,36 @@ fn decode_instructions(tx_b64: &str) -> Result<Vec<RawIx>> {
     Ok(instructions)
 }
 
+/// Resolve a Solana account index to its base58 pubkey.
+/// Index order: static accounts → writable ALT → readonly ALT.
+fn resolve_account(idx: usize, static_accounts: &[String], loaded: Option<&LoadedAddresses>) -> String {
+    if let Some(key) = static_accounts.get(idx) {
+        return key.clone();
+    }
+    if let Some(la) = loaded {
+        let alt_idx = idx - static_accounts.len();
+        if alt_idx < la.writable.len() {
+            return la.writable[alt_idx].clone();
+        }
+        let readonly_idx = alt_idx - la.writable.len();
+        if readonly_idx < la.readonly.len() {
+            return la.readonly[readonly_idx].clone();
+        }
+    }
+    // Unresolvable index — should not occur with well-formed transactions.
+    format!("UNRESOLVED[{}]", idx)
+}
+
 /// Decode a Solana transaction (as returned by `getTransaction` with
 /// `encoding:"base64"`) looking for a Metaplex Core `CreateV2` instruction
 /// that mints into `expected_collection`.
 ///
 /// The `tx` value must be the JSON object at `result.transaction` — an array
 /// `["<base64 bytes>", "base64"]`.
+///
+/// `loaded_addresses` should contain the `result.meta.loadedAddresses` from the
+/// RPC response for v0 transactions using Address Lookup Tables. Pass `None`
+/// for legacy transactions (all accounts are static).
 ///
 /// Returns `Some(HandshakeEvent)` on a matching CreateV2, `None` if no match.
 /// Returns `Err` only for catastrophic parse failures (malformed base64, etc.).
@@ -161,13 +189,14 @@ pub fn try_decode_handshake(
     slot: u64,
     expected_collection: &str,
     ts: i64,
+    loaded_addresses: Option<&LoadedAddresses>,
 ) -> Result<Option<HandshakeEvent>> {
     let tx_b64 = tx
         .get(0)
         .and_then(|v| v.as_str())
         .ok_or_else(|| anyhow::anyhow!("tx[0] is not a base64 string"))?;
 
-    let instructions = match decode_instructions(tx_b64) {
+    let instructions = match decode_instructions(tx_b64, loaded_addresses) {
         Ok(ixs) => ixs,
         Err(e) => {
             tracing::warn!("failed to decode tx {}: {}", signature, e);
@@ -269,5 +298,37 @@ mod tests {
         assert_eq!(parse_edition_from_name("Handshake with Sok — #31"), 31);
         assert_eq!(parse_edition_from_name("no number"), 0);
         assert_eq!(parse_edition_from_name("#1"), 1);
+    }
+
+    #[test]
+    fn resolve_account_static() {
+        let statics = vec!["A".to_string(), "B".to_string()];
+        assert_eq!(resolve_account(0, &statics, None), "A");
+        assert_eq!(resolve_account(1, &statics, None), "B");
+    }
+
+    #[test]
+    fn resolve_account_alt_writable() {
+        let statics = vec!["A".to_string()];
+        let la = LoadedAddresses {
+            writable: vec!["W0".to_string(), "W1".to_string()],
+            readonly: vec!["R0".to_string()],
+        };
+        // Static: index 0 → "A"
+        assert_eq!(resolve_account(0, &statics, Some(&la)), "A");
+        // Writable ALT: indices 1, 2
+        assert_eq!(resolve_account(1, &statics, Some(&la)), "W0");
+        assert_eq!(resolve_account(2, &statics, Some(&la)), "W1");
+        // Readonly ALT: index 3
+        assert_eq!(resolve_account(3, &statics, Some(&la)), "R0");
+        // Out-of-range
+        assert_eq!(resolve_account(4, &statics, Some(&la)), "UNRESOLVED[4]");
+    }
+
+    #[test]
+    fn resolve_account_no_loaded_unresolved() {
+        let statics = vec!["A".to_string()];
+        // Index beyond static range with no LoadedAddresses → UNRESOLVED
+        assert_eq!(resolve_account(2, &statics, None), "UNRESOLVED[2]");
     }
 }
